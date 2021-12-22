@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "listmonk-wrapper"
-version = "0.1.2"
+version = "0.1.4"
 homepage = "https://github.com/Lenders-Cooperative/ListmonkWrapper"
 description = "Light Python wrapper for listmonk.app."
 authors = ["Michael McClelland <mmcclelland@thesummitgrp.com>"]

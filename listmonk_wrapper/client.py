@@ -58,9 +58,6 @@ class ListMonkClient:
             self.HEADERS,
         )
 
-    def get_campaigns(self):
-        return self._api_handler.send_request("GET", "/api/campaigns")
-
     def get_subscriber_info(self, user_id):
         url = f"/api/subscribers/{user_id}"
         return self._api_handler.send_request("GET", url)
@@ -77,37 +74,6 @@ class ListMonkClient:
 
         return self._api_handler.send_request("GET", url, params=params)
 
-    def create_campaign(self, name, subject, body, from_email, content_type="html", lists=[1], template_id=1):
-        payload = json.dumps(
-            {
-                "name": name,
-                "subject": subject,
-                "body": body,
-                "from_email": from_email,
-                "content_type": content_type,
-                "lists": lists,
-                "template_id": template_id,
-            }
-        )
-        return self._api_handler.send_request("POST", "/api/campaigns", payload=payload)
-
-    def update_campaign(self, name, subject, body, from_email, campaign_id, content_type="html", lists=[1], template_id=None):
-        url = f"/api/campaigns/{campaign_id}"
-        data = {
-            "name": name,
-            "subject": subject,
-            "body": body,
-            "from_email": from_email,
-            "content_type": content_type,
-            "lists": lists,
-        }
-        
-        if template_id:
-            data["template_id"] = template_id
-
-        payload = json.dumps(data)
-        return self._api_handler.send_request("PUT", url, payload=payload)
-
     def create_template(self, name, body, content_type="html"):
         payload = json.dumps({"name": name, "body": body, "content_type": content_type})
         return self._api_handler.send_request("POST", "/api/templates", payload=payload)
@@ -117,22 +83,29 @@ class ListMonkClient:
         payload = json.dumps({"name": name, "body": body, "content_type": content_type})
         return self._api_handler.send_request("PUT", url, payload=payload)
 
-    def update_campaign_lists(self, campaign_id, lists):
-        url = f"/api/campaigns/{campaign_id}"
-        payload = json.dumps({"lists": lists})
-        return self._api_handler.send_request("PUT", url, payload=payload)
-
-    def create_list(self, name, list_type, optin):
-        payload = json.dumps({"name": name, "type": list_type, "optin": optin})
+    def create_list(self, name, list_type, optin, tags=[]):
+        payload = json.dumps({"name": name, "type": list_type, "optin": optin, "tags": tags})
         return self._api_handler.send_request("POST", "/api/lists", payload=payload)
+
+    def update_list(self, list_id, name, list_type, optin, tags=[]):
+        url = f"/api/lists/{list_id}"
+        data = {"name": name, "type": list_type, "optin": optin, "tags": tags}
+        if tags:
+            data["tags"] = tags
+
+        payload = json.dumps(data)
+        return self._api_handler.send_request("PUT", url, payload=payload)
 
     def create_subscriber(self, email, name, attribs={}, lists=[]):
         payload = json.dumps({"email": email, "name": name, "attribs": attribs, "lists": lists})
         return self._api_handler.send_request("POST", "/api/subscribers", payload=payload)
 
-    def update_subscriber(self, user_id, email, name, attribs={}, lists=[]):
+    def update_subscriber(self, user_id, email, name, attribs=None, lists=[]):
         url = f"/api/subscribers/{user_id}"
-        payload = json.dumps({"email": email, "name": name, "attribs": attribs, "lists": lists})
+        data = {"email": email, "name": name, "lists": lists}
+        if attribs:
+            data["attribs"] = attribs
+        payload = json.dumps(data)
         return self._api_handler.send_request("PUT", url, payload=payload)
 
     def delete_subscriber(self, user_id):
@@ -151,6 +124,50 @@ class ListMonkClient:
         current_lists = response.get("data", {}).get("lists", [])
         updated_lists = list(set(l["id"] for l in current_lists if l["id"] != list_id))
         return self.update_subscriber(user_id, email, username, lists=updated_lists)
+
+    def get_campaigns(self):
+        return self._api_handler.send_request("GET", "/api/campaigns")
+
+    def create_campaign(self, name, subject, body, from_email, content_type="html", lists=[1], template_id=1, tags=[]):
+        payload = json.dumps(
+            {
+                "name": name,
+                "subject": subject,
+                "body": body,
+                "from_email": from_email,
+                "content_type": content_type,
+                "lists": lists,
+                "template_id": template_id,
+                "tags": tags,
+            }
+        )
+        return self._api_handler.send_request("POST", "/api/campaigns", payload=payload)
+
+    def update_campaign(
+        self, name, subject, body, from_email, campaign_id, content_type="html", lists=[1], template_id=None, tags=None
+    ):
+        url = f"/api/campaigns/{campaign_id}"
+        data = {
+            "name": name,
+            "subject": subject,
+            "body": body,
+            "from_email": from_email,
+            "content_type": content_type,
+            "lists": lists,
+        }
+
+        if template_id:
+            data["template_id"] = template_id
+        if tags:
+            data["tags"] = tags
+
+        payload = json.dumps(data)
+        return self._api_handler.send_request("PUT", url, payload=payload)
+
+    def update_campaign_lists(self, campaign_id, lists):
+        url = f"/api/campaigns/{campaign_id}"
+        payload = json.dumps({"lists": lists})
+        return self._api_handler.send_request("PUT", url, payload=payload)
 
     def run_campaign(self, campaign_id):
         url = f"/api/campaigns/{campaign_id}/status"

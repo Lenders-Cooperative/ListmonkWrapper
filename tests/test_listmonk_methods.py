@@ -41,6 +41,11 @@ def test_create_list(client):
     assert results.get("data")
 
 
+def test_update_list(client):
+    results = client.update_list(list_id=1, name="Test List", list_type="private", optin="double")
+    assert results.get("data")
+
+
 @pytest.mark.parametrize(
     "user_id, email, name",
     [

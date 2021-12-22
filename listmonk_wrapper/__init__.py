@@ -8,7 +8,7 @@
 
 __author__ = """Michael McClelland"""
 __email__ = "mmcclelland@thesummitgrp.com"
-__version__ = "0.1.2"
+__version__ = "0.1.4"
 
 
 from .client import ListMonkClient
