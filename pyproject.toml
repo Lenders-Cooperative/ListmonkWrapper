@@ -1,0 +1,78 @@
+[tool]
+[tool.poetry]
+name = "listmonk-wrapper"
+version = "0.1.0"
+homepage = "https://github.com/Lenders-Cooperative/ListmonkWrapper"
+description = "Light Python wrapper for listmonk.app."
+authors = ["Michael McClelland <mmcclelland@thesummitgrp.com>"]
+readme = "README.md"
+license =  "BSD-3-Clause"
+classifiers=[
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: BSD3 License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3.9',
+]
+packages = [
+    { include = "listmonk_wrapper" },
+    { include = "tests", format = "sdist" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6.2,<4.0"
+
+black  = { version = "^21.5b2", optional = true}
+isort  = { version = "^5.8.0", optional = true}
+flake8  = { version = "^3.9.2", optional = true}
+pytest  = { version = "^6.2.4", optional = true}
+tox  = { version = "^3.20.1", optional = true}
+virtualenv  = { version = "^20.2.2", optional = true}
+pip  = { version = "^20.3.1", optional = true}
+twine  = { version = "^3.3.0", optional = true}
+toml = {version = "^0.10.2", optional = true}
+requests = "^2.26.0"
+
+[tool.poetry.extras]
+test = [
+    "pytest",
+    "black",
+    "isort",
+    "flake8",
+    "flake8-docstrings",
+    ]
+
+dev = ["tox", "pre-commit", "virtualenv", "pip", "twine", "toml"]
+
+[tool.black]
+line-length = 120
+target-version = ['py38', 'py39']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 120
+skip_gitignore = true
+# you can skip files as below
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
