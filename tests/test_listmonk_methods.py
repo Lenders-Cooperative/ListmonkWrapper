@@ -1,5 +1,5 @@
 #
-# Created on Tue Dec 22 2021
+# Created on Wed Dec 22 2021
 #
 # Copyright (c) 2021 Lenders Cooperative, a division of Summit Technology Group, Inc.
 #
@@ -55,3 +55,17 @@ def test_update_subscriber(user_id, email, name, client):
     results = client.get_subscriber_info(user_id)
     assert results["data"]["email"] == email
     assert results["data"]["name"] == name
+
+
+def test_create_campaign(client):
+    data = {
+        "name": "Test Campaign",
+        "subject": "Hello World",
+        "body": "Hello World!",
+        "from_email": "test@gmail.com",
+        "content_type": "html",
+        "lists": [1],
+        "template_id": 1
+    }
+    results = client.create_campaign(**data)
+    assert results.get("data")

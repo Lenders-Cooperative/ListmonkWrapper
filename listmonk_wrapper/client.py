@@ -1,5 +1,5 @@
 #
-# Created on Tue Dec 22 2021
+# Created on Wed Dec 22 2021
 #
 # Copyright (c) 2021 Lenders Cooperative, a division of Summit Technology Group, Inc.
 #
@@ -63,7 +63,6 @@ class ListMonkClient:
 
     def get_subscriber_info(self, user_id):
         url = f"/api/subscribers/{user_id}"
-
         return self._api_handler.send_request("GET", url)
 
     def query_subscribers(self, attributes={}, page=10, per_page="all", **kwargs):
@@ -78,48 +77,49 @@ class ListMonkClient:
 
         return self._api_handler.send_request("GET", url, params=params)
 
-    def create_campaign(self, name, subject, content, from_address, list_ids=[1]):
+    def create_campaign(self, name, subject, body, from_email, content_type="html", lists=[1], template_id=1):
         payload = json.dumps(
             {
                 "name": name,
                 "subject": subject,
-                "body": content,
-                "from_address": from_address,
-                "content_type": "html",
-                "lists": list_ids,
+                "body": body,
+                "from_email": from_email,
+                "content_type": content_type,
+                "lists": lists,
+                "template_id": template_id,
             }
         )
-
         return self._api_handler.send_request("POST", "/api/campaigns", payload=payload)
 
-    def update_campaign(self, name, subject, content, from_address, campaign_id, list_ids=[1]):
+    def update_campaign(self, name, subject, body, from_email, campaign_id, content_type="html", lists=[1], template_id=None):
         url = f"/api/campaigns/{campaign_id}"
-        payload = json.dumps(
-            {
-                "name": name,
-                "subject": subject,
-                "body": content,
-                "from_address": from_address,
-                "content_type": "html",
-                "lists": list_ids,
-            }
-        )
+        data = {
+            "name": name,
+            "subject": subject,
+            "body": body,
+            "from_email": from_email,
+            "content_type": content_type,
+            "lists": lists,
+        }
+        
+        if template_id:
+            data["template_id"] = template_id
 
+        payload = json.dumps(data)
         return self._api_handler.send_request("PUT", url, payload=payload)
 
-    def create_template(self, name, content):
-        payload = json.dumps({"name": name, "body": content, "content_type": "html"})
+    def create_template(self, name, body, content_type="html"):
+        payload = json.dumps({"name": name, "body": body, "content_type": content_type})
         return self._api_handler.send_request("POST", "/api/templates", payload=payload)
 
-    def update_template(self, name, content, template_id):
+    def update_template(self, name, body, template_id, content_type="html"):
         url = f"/api/templates/{template_id}"
-        payload = json.dumps({"name": name, "body": content, "content_type": "html"})
+        payload = json.dumps({"name": name, "body": body, "content_type": content_type})
         return self._api_handler.send_request("PUT", url, payload=payload)
 
     def update_campaign_lists(self, campaign_id, lists):
         url = f"/api/campaigns/{campaign_id}"
         payload = json.dumps({"lists": lists})
-
         return self._api_handler.send_request("PUT", url, payload=payload)
 
     def create_list(self, name, list_type, optin):
@@ -133,7 +133,6 @@ class ListMonkClient:
     def update_subscriber(self, user_id, email, name, attribs={}, lists=[]):
         url = f"/api/subscribers/{user_id}"
         payload = json.dumps({"email": email, "name": name, "attribs": attribs, "lists": lists})
-
         return self._api_handler.send_request("PUT", url, payload=payload)
 
     def delete_subscriber(self, user_id):
@@ -156,5 +155,4 @@ class ListMonkClient:
     def run_campaign(self, campaign_id):
         url = f"/api/campaigns/{campaign_id}/status"
         payload = json.dumps({"status": "running"})
-
         return self._api_handler.send_request("PUT", url, payload=payload)
