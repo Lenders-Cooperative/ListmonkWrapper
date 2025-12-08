@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: listmonk_postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-9432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: listmonk_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+
+  listmonk:
+    image: listmonk/listmonk:v5.1.0
+    container_name: listmonk_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    env_file:
+      - .env
+
+    environment:
+      LISTMONK_app__address: "0.0.0.0:${LISTMONK_PORT}"
+      LISTMONK_db__host: postgres
+      LISTMONK_db__port: 5432
+      LISTMONK_db__user: ${POSTGRES_USER}
+      LISTMONK_db__password: ${POSTGRES_PASSWORD}
+      LISTMONK_db__database: ${POSTGRES_DB}
+      LISTMONK_db__ssl_mode: disable
+      LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USER}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD}
+      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER}
+      # Required app settings
+      LISTMONK_app__lang: "en"
+      # Upload provider configuration
+      LISTMONK_upload__provider: "filesystem"
+      # SMTP configuration for MailHog (fake SMTP server)
+      LISTMONK_smtp__host: mailhog
+      LISTMONK_smtp__port: "1025"
+      LISTMONK_smtp__username: ""
+      LISTMONK_smtp__password: ""
+      LISTMONK_smtp__auth_protocol: "none"
+      LISTMONK_smtp__from_address: ${LISTMONK_SMTP_FROM_EMAIL:-noreply@test.local}
+      LISTMONK_smtp__from_name: "Listmonk Test"
+      LISTMONK_smtp__tls_enabled: "false"
+      LISTMONK_smtp__tls_skip_verify: "true"
+
+    # Run install to bootstrap database, create admin user, and API user
+    # Capture the API token from stderr (it's printed as: export LISTMONK_ADMIN_API_TOKEN="token")
+    command: >
+      sh -c "
+        ./listmonk --install --idempotent --yes 2>&1 | tee /tmp/listmonk_install.log &&
+        grep 'export LISTMONK_ADMIN_API_TOKEN=' /tmp/listmonk_install.log | sed -E 's/.*LISTMONK_ADMIN_API_TOKEN=\"([^\"]+)\".*/\\1/' | head -1 > /tmp/api_token.txt || true &&
+        ./listmonk
+      "
+
+    volumes:
+      - ./tmp:/tmp
+      - ./uploads:/listmonk/uploads:rw
+
+    ports:
+      - "${LISTMONK_PORT}:${LISTMONK_PORT}"
+
+volumes:
+  pgdata:

@@ -1,0 +1,72 @@
+exclude: "docs|node_modules|migrations|.git|.tox|tmp"
+default_stages: [pre-commit]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: mixed-line-ending
+
+  - repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+      - id: black
+        args: ['--line-length', '100', '--target-version', 'py311']
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: ['--profile', 'black', '--line-length', '100']
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.0
+    hooks:
+      - id: flake8
+        args: ['--ignore=E501,W503,F403,F405,E203', '--max-line-length=100']
+        additional_dependencies: [flake8-isort]
+
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.0.3
+    hooks:
+      - id: pylint
+        args: ['--rcfile=pyproject.toml']
+        files: ^src/listmonk_wrapper/.*\.py$
+        additional_dependencies: ['toml', 'requests>=2.31.0']
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+            (?x)^(
+                .*\.lock$|
+                .*\.log$|
+                .*secrets\.baseline$|
+                .*\.pyc$|
+                .*__pycache__.*|
+                tmp/.*|
+                \.git/.*|
+                \.pre-commit-config\.yaml$|
+                poetry\.lock$|
+                pyproject\.toml$
+            )$
+
+  - repo: https://github.com/yunojuno/pre-commit-xenon
+    rev: cc59b0431a5d072786b59430e9b342b2881064f6
+    hooks:
+      - id: xenon
+        args: ['--max-average=C', '--max-modules=C', '--max-absolute=C']
+
+# sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
+ci:
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

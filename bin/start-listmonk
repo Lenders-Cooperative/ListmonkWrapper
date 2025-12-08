@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+COMPOSE_FILE="docker-compose.listmonk.yml"
+DC="docker compose -f ${COMPOSE_FILE}"
+
+echo "[start-listmonk] Starting Listmonk test environment..."
+
+# ---------------------------------------------------------
+# 0) Clean up any existing containers and volumes for fresh start
+# ---------------------------------------------------------
+echo "[start-listmonk] Cleaning up any existing containers and volumes..."
+$DC down -v 2>/dev/null || true
+
+# ---------------------------------------------------------
+# 1) Start Postgres
+# ---------------------------------------------------------
+echo "[start-listmonk] Starting Postgres..."
+$DC up -d postgres
+
+echo "[start-listmonk] Waiting for Postgres to become healthy..."
+until $DC exec postgres pg_isready \
+        -U "${POSTGRES_USER:-listmonk}" \
+        -d "${POSTGRES_DB:-listmonk}" >/dev/null 2>&1; do
+    sleep 1
+done
+echo "[start-listmonk] Postgres is ready."
+
+# ---------------------------------------------------------
+# 2) Start MailHog (fake SMTP server)
+# ---------------------------------------------------------
+echo "[start-listmonk] Starting MailHog..."
+$DC up -d mailhog
+echo "[start-listmonk] MailHog started (SMTP: localhost:1025, Web UI: http://localhost:8025)"
+
+# ---------------------------------------------------------
+# 3) Start Listmonk (which runs admin creation + server)
+# ---------------------------------------------------------
+echo "[start-listmonk] Starting Listmonk service..."
+$DC up -d listmonk
+
+# ---------------------------------------------------------
+# 4) Wait for HTTP API readiness
+# ---------------------------------------------------------
+LISTMONK_PORT="${LISTMONK_PORT:-9000}"
+BASE_URL="http://localhost:${LISTMONK_PORT}"
+
+echo "[start-listmonk] Waiting for Listmonk HTTP API on ${BASE_URL}..."
+
+# Any of 200, 401, or 403 means the HTTP server is accepting requests
+until curl -s -o /dev/null -w "%{http_code}" \
+          "${BASE_URL}/api/campaigns" | grep -qE '200|401|403'; do
+    sleep 1
+done
+
+echo "[start-listmonk] Listmonk ready at ${BASE_URL}"
+
+# Give listmonk a moment to fully initialize after HTTP server starts
+sleep 2
+
+# ---------------------------------------------------------
+# 5) Extract API token from install logs
+# ---------------------------------------------------------
+API_USER="${LISTMONK_ADMIN_API_USER:-api_user}"
+TOKEN_FILE="./tmp/api_token.txt"
+
+# Wait a moment for install log to be written
+sleep 2
+
+# Try to extract token from install log if file is empty
+if [ -f "${TOKEN_FILE}" ] && [ ! -s "${TOKEN_FILE}" ]; then
+    # Token file exists but is empty, try extracting from log
+    if [ -f "./tmp/listmonk_install.log" ]; then
+        TOKEN=$(grep 'export LISTMONK_ADMIN_API_TOKEN=' ./tmp/listmonk_install.log | sed -E 's/.*LISTMONK_ADMIN_API_TOKEN="([^"]+)".*/\1/' | head -1)
+        if [ -n "${TOKEN}" ]; then
+            echo "${TOKEN}" > "${TOKEN_FILE}"
+        fi
+    fi
+fi
+
+if [ -f "${TOKEN_FILE}" ] && [ -s "${TOKEN_FILE}" ]; then
+    API_TOKEN=$(cat "${TOKEN_FILE}" | tr -d '\n\r ')
+    if [ -n "${API_TOKEN}" ]; then
+        echo "[start-listmonk] API token found for user: ${API_USER}"
+        echo "[start-listmonk] Exporting LISTMONK_API_USER and LISTMONK_API_TOKEN"
+        export LISTMONK_API_USER="${API_USER}"
+        export LISTMONK_API_TOKEN="${API_TOKEN}"
+        # Also save to a file that can be sourced
+        echo "export LISTMONK_API_USER='${API_USER}'" > ./tmp/listmonk_api_creds.sh
+        echo "export LISTMONK_API_TOKEN='${API_TOKEN}'" >> ./tmp/listmonk_api_creds.sh
+    else
+        echo "[start-listmonk] Warning: API token file exists but is empty"
+    fi
+else
+    echo "[start-listmonk] Warning: API token file not found at ${TOKEN_FILE}"
+    echo "[start-listmonk] You may need to check docker logs to find the API token"
+fi
+
+# ---------------------------------------------------------
+# 6) Configure settings (SMTP and app.lang) via API
+# ---------------------------------------------------------
+if [ -f "${TOKEN_FILE}" ] && [ -s "${TOKEN_FILE}" ]; then
+    API_TOKEN=$(cat "${TOKEN_FILE}" | tr -d '\n\r ')
+    if [ -n "${API_TOKEN}" ]; then
+        echo "[start-listmonk] Configuring settings via API..."
+        # Get current settings
+        CURRENT_SETTINGS=$(curl -s -u "${API_USER}:${API_TOKEN}" "${BASE_URL}/api/settings")
+
+        # Update settings: set app.lang, upload provider, upload extensions, and configure SMTP for MailHog
+        # Include all required SMTP fields with proper timeout values (duration strings like "15s")
+        # Note: hello_hostname is optional but included for completeness
+        SMTP_FROM_EMAIL="${LISTMONK_SMTP_FROM_EMAIL:-noreply@test.local}"
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT -u "${API_USER}:${API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"app.lang\":\"en\",\"upload.provider\":\"filesystem\",\"upload.extensions\":[\"jpg\",\"jpeg\",\"png\",\"gif\",\"pdf\",\"svg\"],\"app.from_email\":\"${SMTP_FROM_EMAIL}\",\"smtp\":[{\"enabled\":true,\"host\":\"mailhog\",\"port\":1025,\"username\":\"\",\"password\":\"\",\"auth_protocol\":\"none\",\"tls_type\":\"NONE\",\"tls_skip_verify\":true,\"from_address\":\"${SMTP_FROM_EMAIL}\",\"from_name\":\"Listmonk Test\",\"idle_timeout\":\"15s\",\"wait_timeout\":\"5s\",\"max_conns\":10,\"max_msg_retries\":2,\"email_headers\":[],\"hello_hostname\":\"\"}]}" \
+            "${BASE_URL}/api/settings")
+        HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+        if [ "$HTTP_CODE" = "200" ]; then
+            echo "[start-listmonk] Settings configured (app.lang=en, upload.provider=filesystem, SMTP=mailhog:1025)"
+        else
+            echo "[start-listmonk] Warning: Settings configuration returned HTTP $HTTP_CODE"
+            echo "[start-listmonk] Response: $(echo "$RESPONSE" | head -1)"
+        fi
+    fi
+fi
