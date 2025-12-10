@@ -529,6 +529,22 @@ pygments = ">=2.7.2"
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "pytest-repeat"
+version = "0.9.4"
+description = "pytest plugin for repeating tests"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "pytest_repeat-0.9.4-py3-none-any.whl", hash = "sha256:c1738b4e412a6f3b3b9e0b8b29fcd7a423e50f87381ad9307ef6f5a8601139f3"},
+    {file = "pytest_repeat-0.9.4.tar.gz", hash = "sha256:d92ac14dfaa6ffcfe6917e5d16f0c9bc82380c135b03c2a5f412d2637f224485"},
+]
+
+[package.dependencies]
+pytest = "*"
+
+[[package]]
 name = "python-dotenv"
 version = "1.2.1"
 description = "Read key-value pairs from a .env file and set them as environment variables"
@@ -750,9 +766,9 @@ requests = ">=2.0,<3.0"
 
 [extras]
 dev = ["black", "flake8", "flake8-isort", "isort", "pylint", "radon", "xenon"]
-test = ["pytest", "python-dotenv"]
+test = ["pytest", "pytest-repeat", "python-dotenv"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "fb3348f41e1f991f6f9aec8b6f2a3f5b8e2a5c8b5874840abe6fce020e62aea0"
+content-hash = "dee1943ddf14463271d66911fe138069263eae5b1c93f84b6d2180fa8f5ca147"

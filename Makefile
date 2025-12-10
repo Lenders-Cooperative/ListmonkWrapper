@@ -63,6 +63,7 @@ listmonk-down:
 # Default values for test arguments
 CAPTURE ?= no
 DIR ?= tests/
+COUNT ?= 1
 
 test:
 	@echo "--- Ensuring environment is up and healthy before running tests ---"
@@ -71,9 +72,9 @@ test:
 
 	@echo "--- Environment ready. Running tests ---"
 	@if [ "$(CAPTURE)" = "no" ]; then \
-		pytest -q -s $(DIR); \
+		pytest -q -s $(DIR) --count=$(COUNT); \
 	else \
-		pytest -q $(DIR); \
+		pytest -q $(DIR) --count=$(COUNT); \
 	fi
 
 	@echo "--- Tests finished. Tearing down environment ---"

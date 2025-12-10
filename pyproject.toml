@@ -19,7 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["black", "isort", "pylint", "flake8", "flake8-isort", "xenon", "radon"]
-test = ["pytest", "python-dotenv"]
+test = ["pytest", "python-dotenv", "pytest-repeat"]
 
 [project.urls]
 Homepage = "https://pypi.org/project/listmonk-wrapper/"

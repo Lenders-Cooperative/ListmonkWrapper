@@ -251,7 +251,7 @@ def test_send_transactional_validation_errors(client):
         template_id = template["data"]["id"]
 
         # Test: No subscriber parameters
-        with pytest.raises(ValueError, match="Must provide either"):
+        with pytest.raises(ValueError, match="Provide either"):
             client.send_transactional(template_id=template_id)
 
         # Test: Both single and multiple subscriber parameters
