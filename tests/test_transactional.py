@@ -262,8 +262,10 @@ def test_send_transactional_validation_errors(client):
                 subscriber_emails=["test@test.com"],
             )
 
-        # Test: External mode is not supported (should fail)
-        with pytest.raises(ValueError, match="subscriber_mode 'external' is not supported"):
+        # Test: External mode requires opt-in for v6.0.0+ support
+        with pytest.raises(
+            ValueError, match="subscriber_mode 'external' requires Listmonk v6.0.0\\+"
+        ):
             client.send_transactional(
                 template_id=template_id,
                 subscriber_mode="external",
@@ -313,3 +315,32 @@ def test_send_transactional_nonexistent_attachment(client):
         if e.response.status_code == 500:
             pytest.skip("Template creation failed with server error")
         raise
+
+
+def test_send_transactional_external_v6(client, listmonk_version_tuple):
+    """Test external recipient mode in v6.0.0+."""
+    if listmonk_version_tuple < (6, 0, 0):
+        pytest.skip("External recipients require Listmonk v6.0.0+")
+
+    timestamp = int(time.time())
+    template_name = f"TxExternalTemplate_{timestamp}"
+    template_body = "<html><body>External</body></html>"
+
+    template_id = None
+    try:
+        template = client.create_template(
+            template_name, template_body, template_type="tx", subject="External"
+        )
+        template_id = template["data"]["id"]
+
+        result = client.send_transactional(
+            template_id=template_id,
+            subscriber_mode="external",
+            subscriber_email=f"external_{timestamp}@test.com",
+            allow_external=True,
+        )
+        assert "data" in result
+        assert result["data"] is True
+    finally:
+        if template_id is not None:
+            client.delete_template(template_id)

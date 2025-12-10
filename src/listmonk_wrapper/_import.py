@@ -47,6 +47,8 @@ class ImportMixin:
         lists: Optional[List[int]] = None,
         overwrite: bool = False,
         subscription_status: Optional[str] = None,
+        overwrite_userinfo: Optional[bool] = None,
+        overwrite_subscription_status: Optional[bool] = None,
     ) -> JSONDict:
         """
         Upload a CSV file (optionally ZIP compressed)
@@ -63,6 +65,10 @@ class ImportMixin:
                     subscriber data (default: False).
             subscription_status: Optional subscription
                     status (e.g., "confirmed", "unconfirmed").
+            overwrite_userinfo: Optional granular overwrite
+                    for subscriber profile data (v6.0.0+).
+            overwrite_subscription_status: Optional granular overwrite
+                    for subscription status data (v6.0.0+).
 
         Returns:
             JSON dict with import parameters that were used.
@@ -90,8 +96,14 @@ class ImportMixin:
         params_dict: Dict[str, Any] = {
             "mode": mode,
             "delim": delimiter,
-            "overwrite": overwrite,
         }
+        if overwrite_userinfo is not None or overwrite_subscription_status is not None:
+            if overwrite_userinfo is not None:
+                params_dict["overwrite_userinfo"] = overwrite_userinfo
+            if overwrite_subscription_status is not None:
+                params_dict["overwrite_subscription_status"] = overwrite_subscription_status
+        else:
+            params_dict["overwrite"] = overwrite
         if lists is not None:
             params_dict["lists"] = lists
         if subscription_status is not None:

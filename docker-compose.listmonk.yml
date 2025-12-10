@@ -28,7 +28,7 @@ services:
       - "8025:8025"  # Web UI
 
   listmonk:
-    image: listmonk/listmonk:v5.1.0
+    image: listmonk/listmonk:v6.0.0
     container_name: listmonk_app
     restart: unless-stopped
     depends_on:

@@ -19,12 +19,12 @@ class TransactionalMixin:  # pylint: disable=too-few-public-methods
     # ------------------------------------------------------------
     # Validation helpers
     # ------------------------------------------------------------
-    def _validate_mode(self, subscriber_mode: str) -> None:
+    def _validate_mode(self, subscriber_mode: str, allow_external: bool) -> None:
         """Validate subscriber mode constraints."""
-        if subscriber_mode == "external":
+        if subscriber_mode == "external" and not allow_external:
             raise ValueError(
-                "subscriber_mode 'external' is not supported in Listmonk v5.1.0. "
-                "Use 'fallback' mode or ensure recipients exist."
+                "subscriber_mode 'external' requires Listmonk v6.0.0+; "
+                "set allow_external=True or use 'fallback' with existing subscribers."
             )
 
     def _validate_fallback(  # pylint: disable=too-many-arguments
@@ -44,6 +44,24 @@ class TransactionalMixin:  # pylint: disable=too-few-public-methods
 
         if not subscriber_emails:
             raise ValueError("subscriber_mode 'fallback' requires subscriber_emails")
+
+    def _validate_external(  # pylint: disable=too-many-arguments
+        self,
+        subscriber_mode: str,
+        subscriber_email: Optional[str],
+        subscriber_id: Optional[int],
+        subscriber_emails: Optional[List[str]],
+        subscriber_ids: Optional[List[int]],
+    ) -> None:
+        """Validate external mode rules."""
+        if subscriber_mode != "external":
+            return
+
+        if subscriber_id or subscriber_ids:
+            raise ValueError("subscriber_mode 'external' only accepts subscriber_email(s)")
+
+        if not (subscriber_email or subscriber_emails):
+            raise ValueError("subscriber_mode 'external' requires subscriber_email(s)")
 
     def _validate_subscriber_sets(
         self,
@@ -115,7 +133,7 @@ class TransactionalMixin:  # pylint: disable=too-few-public-methods
     # ------------------------------------------------------------
     # Main API method
     # ------------------------------------------------------------
-    def send_transactional(  # pylint: disable=too-many-arguments
+    def send_transactional(  # pylint: disable=too-many-arguments,too-many-locals
         self,
         template_id: int,
         *,
@@ -131,11 +149,28 @@ class TransactionalMixin:  # pylint: disable=too-few-public-methods
         messenger: str = "email",
         content_type: str = "html",
         attachments: Optional[List[str]] = None,
+        allow_external: bool = False,
     ) -> JSONDict:
-        """Send a transactional message to one or more subscribers."""
+        """Send a transactional message to one or more subscribers.
+
+        Example:
+            client.send_transactional(
+                template_id=123,
+                subscriber_email="user@example.com",
+                subject="Welcome",
+                data={"plan": "starter"},
+            )
+        """
         # ---- Validation ----
-        self._validate_mode(subscriber_mode)
+        self._validate_mode(subscriber_mode, allow_external)
         self._validate_fallback(
+            subscriber_mode,
+            subscriber_email,
+            subscriber_id,
+            subscriber_emails,
+            subscriber_ids,
+        )
+        self._validate_external(
             subscriber_mode,
             subscriber_email,
             subscriber_id,

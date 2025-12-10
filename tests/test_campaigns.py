@@ -10,6 +10,7 @@ This module covers all campaign operations:
 
 import time
 
+import pytest
 import requests
 
 
@@ -72,3 +73,69 @@ def test_campaign_full_flow(client):
 
     # Cleanup
     client.delete_subscriber(sid)
+
+
+def test_campaign_attribs_v6(client, listmonk_version_tuple):
+    """Test campaign JSON attribs support in v6.0.0+."""
+    if listmonk_version_tuple < (6, 0, 0):
+        pytest.skip("Campaign attribs require Listmonk v6.0.0+")
+
+    timestamp = int(time.time())
+    created_list = client.create_list(
+        name=f"Attribs List {timestamp}", list_type="private", optin="single"
+    )
+    list_id = created_list["data"]["id"]
+
+    attribs = {"source": "tests", "counter": 1}
+    campaign = client.create_campaign(
+        name=f"Attribs Campaign {timestamp}",
+        subject="Attribs Subject",
+        body="<p>Attribs Body</p>",
+        from_email="noreply@test.com",
+        lists=[list_id],
+        attribs=attribs,
+    )
+    campaign_id = campaign["data"]["id"]
+
+    if "attribs" in campaign["data"]:
+        assert campaign["data"]["attribs"] == attribs
+    else:
+        campaigns = client.get_campaigns()
+        match = next((c for c in campaigns["data"]["results"] if c["id"] == campaign_id), None)
+        assert match is not None
+        assert match.get("attribs") == attribs
+
+    client.delete_campaign(campaign_id)
+    client.delete_list(list_id)
+
+
+def test_delete_campaigns_v6(client, listmonk_version_tuple):
+    """Test bulk campaign deletion in v6.0.0+."""
+    if listmonk_version_tuple < (6, 0, 0):
+        pytest.skip("Bulk campaign deletion requires Listmonk v6.0.0+")
+
+    timestamp = int(time.time())
+    created_list = client.create_list(
+        name=f"Delete Campaigns List {timestamp}", list_type="private", optin="single"
+    )
+    list_id = created_list["data"]["id"]
+
+    campaign_ids = []
+    for i in range(2):
+        campaign = client.create_campaign(
+            name=f"Delete Campaign {timestamp}-{i}",
+            subject="Delete Subject",
+            body="<p>Delete Body</p>",
+            from_email="noreply@test.com",
+            lists=[list_id],
+        )
+        campaign_ids.append(campaign["data"]["id"])
+
+    result = client.delete_campaigns(campaign_ids=campaign_ids)
+    assert "data" in result or "message" in result
+
+    campaigns = client.get_campaigns()
+    remaining = {c["id"] for c in campaigns["data"]["results"]}
+    assert not any(cid in remaining for cid in campaign_ids)
+
+    client.delete_list(list_id)

@@ -1,7 +1,7 @@
 # ListmonkWrapper
 
-Lightweight, typed Python wrapper for the **Listmonk v5.1.0+ REST API**, using HTTP Basic
-Authentication.
+Lightweight, typed Python wrapper for the **Listmonk v5.1.0+ and v6.0.0+ REST API**, using HTTP
+Basic Authentication.
 
 **Note**: This repository includes a Docker-based **test environment** for running integration tests
 against Listmonk. The Docker setup is designed specifically for testing the `ListMonkClient` and is
@@ -163,10 +163,10 @@ management system.
 
 ---
 
-## Authentication Model (Listmonk v5.1.0+)
+## Authentication Model (Listmonk v5.1.0+ and v6.0.0+)
 
-Listmonk v5.1.0+ uses HTTP Basic Authentication for API access. The setup process automatically
-creates and captures API credentials:
+Listmonk v5.1.0+ and v6.0.0+ use HTTP Basic Authentication for API access. The setup process
+automatically creates and captures API credentials:
 
 ### API User and Token Creation
 
@@ -307,7 +307,8 @@ client = ListMonkClient(
 
 ## API Coverage
 
-The client provides comprehensive coverage of the Listmonk v5.1.0+ API:
+The client provides comprehensive coverage of the Listmonk v5.1.0+ API, with v6.0.0 feature
+support where available:
 
 ### Subscribers
 - **CRUD Operations**: `get_subscriber()`, `create_subscriber()`, `update_subscriber()`, `delete_subscriber()`
@@ -338,6 +339,9 @@ The client provides comprehensive coverage of the Listmonk v5.1.0+ API:
 
 ### Campaigns
 - **Operations**: `get_campaigns()`, `create_campaign()`, `update_campaign()`, `run_campaign()`
+- **v6.0.0+**:
+  - `attribs` support on campaign create/update payloads
+  - `delete_campaign()` and `delete_campaigns()` (bulk deletion by IDs or query/all)
 
 ### Media
 - **Operations**: `get_media()`, `get_media_file()`, `upload_media()`, `delete_media()`
@@ -353,7 +357,9 @@ The client provides comprehensive coverage of the Listmonk v5.1.0+ API:
   - Custom `from_email`, `subject`, `data` (template variables), `headers`
   - File attachments support
   - Content types: `html`, `markdown`, `plain`
-- **Note**: `"external"` mode is not supported due to a bug in Listmonk v5.1.0
+- **Version Behavior**:
+  - v5.1.0: `"external"` mode is not supported due to a Listmonk bug
+  - v6.0.0+: `"external"` mode is supported (with recipient validation)
 
 ### Bounces
 - **Retrieval**: `get_bounces()` - Get bounce records with filtering, pagination, and sorting
@@ -368,6 +374,8 @@ The client provides comprehensive coverage of the Listmonk v5.1.0+ API:
 - **Status & Logs**: `get_import_status()`, `get_import_logs()`
 - **Import**: `import_subscribers()` - Upload CSV/ZIP for bulk subscriber import
 - **Management**: `delete_import()` - Stop and remove ongoing import
+- **v6.0.0+**: granular overwrite flags for `import_subscribers()`:
+  - `overwrite_userinfo`, `overwrite_subscription_status`
 
 ---
 
@@ -389,6 +397,7 @@ The test suite exercises:
 **Note**: Some features may be skipped if not supported by the Listmonk version:
 - Template creation (may have server errors in some environments)
 - Bulk list deletion (may fall back to individual deletion)
+- v6-only tests are gated by `/api/config` version checks in the fixtures
 
 To run all tests:
 
@@ -465,7 +474,7 @@ docker-compose.listmonk.yml
 When you run `make listmonk-up` or `make test` (for testing only), the following process occurs:
 
 1. **Postgres Container**: Starts first and waits for health check
-2. **Listmonk Container**: Starts after Postgres is healthy
+2. **Listmonk Container**: Starts after Postgres is healthy (v6.0.0 image in `docker-compose.listmonk.yml`)
 3. **Installation**: The Listmonk container runs `./listmonk --install --idempotent --yes`
    - Creates database schema if needed
    - Creates admin user (`LISTMONK_ADMIN_USER` / `LISTMONK_ADMIN_PASSWORD`)

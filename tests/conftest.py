@@ -22,6 +22,38 @@ LISTMONK_HOST = os.getenv("LISTMONK_HOST", "http://localhost")
 LISTMONK_PORT = os.getenv("LISTMONK_PORT", "9000")
 
 
+def _load_api_creds_from_file() -> None:
+    creds_file = os.path.join(os.path.dirname(__file__), "..", "tmp", "listmonk_api_creds.sh")
+    if not os.path.exists(creds_file):
+        return
+
+    with open(creds_file, "r") as f:
+        for line in f:
+            if line.startswith("export "):
+                parts = line.replace("export ", "").strip().split("=", 1)
+                if len(parts) == 2:
+                    key = parts[0]
+                    value = parts[1].strip("'\"")
+                    os.environ[key] = value
+
+
+def _get_api_credentials() -> tuple[str, str]:
+    username = os.getenv("LISTMONK_API_USER") or os.getenv("LISTMONK_ADMIN_API_USER", "api_admin")
+    password = os.getenv("LISTMONK_API_TOKEN") or os.getenv("LISTMONK_ADMIN_PASSWORD", "admin123")
+    return username, password
+
+
+def _parse_version(version: str) -> tuple[int, ...]:
+    cleaned = version.strip().lstrip("v").split("-", 1)[0]
+    parts = []
+    for part in cleaned.split("."):
+        try:
+            parts.append(int(part))
+        except ValueError:
+            break
+    return tuple(parts) if parts else (0, 0, 0)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def ensure_listmonk_ready():
     """
@@ -72,23 +104,11 @@ def client() -> ListMonkClient:
     """
     # Try to load API credentials from the credentials
     # file created by start-listmonk
-    creds_file = os.path.join(os.path.dirname(__file__), "..", "tmp", "listmonk_api_creds.sh")
-    if os.path.exists(creds_file):
-        # Source the credentials file to get the environment variables
-        with open(creds_file, "r") as f:
-            for line in f:
-                if line.startswith("export "):
-                    # Parse export statements and set environment variables
-                    parts = line.replace("export ", "").strip().split("=", 1)
-                    if len(parts) == 2:
-                        key = parts[0]
-                        value = parts[1].strip("'\"")
-                        os.environ[key] = value
+    _load_api_creds_from_file()
 
     # Use API credentials if available, otherwise
     # fall back to admin credentials
-    username = os.getenv("LISTMONK_API_USER") or os.getenv("LISTMONK_ADMIN_API_USER", "api_admin")
-    password = os.getenv("LISTMONK_API_TOKEN") or os.getenv("LISTMONK_ADMIN_PASSWORD", "admin123")
+    username, password = _get_api_credentials()
     host = os.getenv("LISTMONK_HOST", "http://localhost")
     port = os.getenv("LISTMONK_PORT", "9000")
 
@@ -98,6 +118,27 @@ def client() -> ListMonkClient:
         username=username,
         password=password,
     )
+
+
+@pytest.fixture(scope="session")
+def listmonk_version() -> str:
+    _load_api_creds_from_file()
+    username, password = _get_api_credentials()
+    host = os.getenv("LISTMONK_HOST", "http://localhost")
+    port = os.getenv("LISTMONK_PORT", "9000")
+    url = f"{host}:{port}/api/config"
+
+    try:
+        response = requests.get(url, auth=(username, password), timeout=5)
+        response.raise_for_status()
+        return response.json()["data"]["version"]
+    except Exception:
+        return "0.0.0"
+
+
+@pytest.fixture(scope="session")
+def listmonk_version_tuple(listmonk_version: str) -> tuple[int, ...]:
+    return _parse_version(listmonk_version)
 
 
 # -------------------------------------------------------------------------
