@@ -14,11 +14,12 @@ authors = [
 ]
 
 dependencies = [
-  "requests>=2.31.0",
+  "requests>=2.33.0",
+  "urllib3>=2.6.3",
 ]
 
 [project.optional-dependencies]
-dev = ["black", "isort", "pylint", "flake8", "flake8-isort", "xenon", "radon"]
+dev = ["black>=26.3.1", "isort", "pylint", "flake8", "flake8-isort", "xenon", "radon"]
 test = ["pytest", "python-dotenv", "pytest-repeat"]
 
 [project.urls]
