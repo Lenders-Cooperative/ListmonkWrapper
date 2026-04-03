@@ -46,20 +46,23 @@ def test_update_list(client):
 
 def test_create_update_list(client):
     """Test creating and updating a list."""
-    # Create
-    created = client.create_list(name="Extended List", list_type="private", optin="double")
+    timestamp = int(time.time())
+    created = client.create_list(name=f"ExtendedList_{timestamp}", list_type="private", optin="double")
     list_id = created["data"]["id"]
     assert isinstance(list_id, int)
 
-    # Update
-    updated = client.update_list(
-        list_id=list_id,
-        name="Extended List Updated",
-        list_type="private",
-        optin="double",
-    )
-    assert "data" in updated
-    assert isinstance(updated["data"], dict)
+    try:
+        # Update
+        updated = client.update_list(
+            list_id=list_id,
+            name=f"ExtendedList_{timestamp}_Updated",
+            list_type="private",
+            optin="double",
+        )
+        assert "data" in updated
+        assert isinstance(updated["data"], dict)
+    finally:
+        client.delete_list(list_id)
 
 
 def test_get_lists(client):

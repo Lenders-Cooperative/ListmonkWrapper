@@ -19,8 +19,8 @@ class CampaignsMixin:
         Retrieve all campaigns.
 
         Returns:
-            JSON dict containing a "result" list of campaigns along with
-            pagination metadata.
+            JSON dict containing campaign results under ``data.results``
+            along with pagination metadata in ``data``.
         """
         return self._api.send("GET", "/api/campaigns")
 

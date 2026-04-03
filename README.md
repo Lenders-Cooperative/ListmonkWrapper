@@ -27,10 +27,10 @@ through your normal deployment process (e.g., environment variables, secrets man
 
 ## Installation
 
-Install dependencies (including dev + test groups):
+Install dependencies (including dev + test extras):
 
 ```
-poetry install --with dev,test
+pip install -e '.[dev,test]'
 ```
 
 Install pre-commit hooks (optional but recommended):

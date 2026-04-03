@@ -74,7 +74,8 @@ def test_query_subscribers_by_email(client):
 
 def test_create_and_delete_subscriber(client):
     """Test creating and deleting a subscriber."""
-    created = client.create_subscriber(email="test3457@gmail.com", name="Jeff")
+    email = f"create_delete_{int(time.time())}@test.com"
+    created = client.create_subscriber(email=email, name="Jeff")
     sid = created["data"]["id"]
     assert isinstance(sid, int)
 

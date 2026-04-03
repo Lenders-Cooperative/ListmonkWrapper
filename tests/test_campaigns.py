@@ -97,32 +97,39 @@ def test_campaign_attribs_v6(client, listmonk_version_tuple):
         pytest.skip("Campaign attribs require Listmonk v6.0.0+")
 
     timestamp = int(time.time())
-    created_list = client.create_list(
-        name=f"Attribs List {timestamp}", list_type="private", optin="single"
-    )
-    list_id = created_list["data"]["id"]
+    campaign_id = list_id = None
 
-    attribs = {"source": "tests", "counter": 1}
-    campaign = client.create_campaign(
-        name=f"Attribs Campaign {timestamp}",
-        subject="Attribs Subject",
-        body="<p>Attribs Body</p>",
-        from_email="noreply@test.com",
-        lists=[list_id],
-        attribs=attribs,
-    )
-    campaign_id = campaign["data"]["id"]
+    try:
+        created_list = client.create_list(
+            name=f"Attribs List {timestamp}", list_type="private", optin="single"
+        )
+        list_id = created_list["data"]["id"]
 
-    if "attribs" in campaign["data"]:
-        assert campaign["data"]["attribs"] == attribs
-    else:
-        campaigns = client.get_campaigns()
-        match = next((c for c in campaigns["data"]["results"] if c["id"] == campaign_id), None)
-        assert match is not None
-        assert match.get("attribs") == attribs
+        attribs = {"source": "tests", "counter": 1}
+        campaign = client.create_campaign(
+            name=f"Attribs Campaign {timestamp}",
+            subject="Attribs Subject",
+            body="<p>Attribs Body</p>",
+            from_email="noreply@test.com",
+            lists=[list_id],
+            attribs=attribs,
+        )
+        campaign_id = campaign["data"]["id"]
 
-    client.delete_campaign(campaign_id)
-    client.delete_list(list_id)
+        if "attribs" in campaign["data"]:
+            assert campaign["data"]["attribs"] == attribs
+        else:
+            campaigns = client.get_campaigns()
+            match = next((c for c in campaigns["data"]["results"] if c["id"] == campaign_id), None)
+            assert match is not None
+            assert match.get("attribs") == attribs
+    finally:
+        for delete_fn, rid in [(client.delete_campaign, campaign_id), (client.delete_list, list_id)]:
+            if rid is not None:
+                try:
+                    delete_fn(rid)
+                except Exception:
+                    pass
 
 
 def test_delete_campaigns_v6(client, listmonk_version_tuple):
@@ -131,27 +138,39 @@ def test_delete_campaigns_v6(client, listmonk_version_tuple):
         pytest.skip("Bulk campaign deletion requires Listmonk v6.0.0+")
 
     timestamp = int(time.time())
-    created_list = client.create_list(
-        name=f"Delete Campaigns List {timestamp}", list_type="private", optin="single"
-    )
-    list_id = created_list["data"]["id"]
-
+    list_id = None
     campaign_ids = []
-    for i in range(2):
-        campaign = client.create_campaign(
-            name=f"Delete Campaign {timestamp}-{i}",
-            subject="Delete Subject",
-            body="<p>Delete Body</p>",
-            from_email="noreply@test.com",
-            lists=[list_id],
+
+    try:
+        created_list = client.create_list(
+            name=f"Delete Campaigns List {timestamp}", list_type="private", optin="single"
         )
-        campaign_ids.append(campaign["data"]["id"])
+        list_id = created_list["data"]["id"]
 
-    result = client.delete_campaigns(campaign_ids=campaign_ids)
-    assert "data" in result or "message" in result
+        for i in range(2):
+            campaign = client.create_campaign(
+                name=f"Delete Campaign {timestamp}-{i}",
+                subject="Delete Subject",
+                body="<p>Delete Body</p>",
+                from_email="noreply@test.com",
+                lists=[list_id],
+            )
+            campaign_ids.append(campaign["data"]["id"])
 
-    campaigns = client.get_campaigns()
-    remaining = {c["id"] for c in campaigns["data"]["results"]}
-    assert not any(cid in remaining for cid in campaign_ids)
+        result = client.delete_campaigns(campaign_ids=campaign_ids)
+        assert "data" in result or "message" in result
 
-    client.delete_list(list_id)
+        campaigns = client.get_campaigns()
+        remaining = {c["id"] for c in campaigns["data"]["results"]}
+        assert not any(cid in remaining for cid in campaign_ids)
+    finally:
+        for cid in campaign_ids:
+            try:
+                client.delete_campaign(cid)
+            except Exception:
+                pass
+        if list_id is not None:
+            try:
+                client.delete_list(list_id)
+            except Exception:
+                pass
