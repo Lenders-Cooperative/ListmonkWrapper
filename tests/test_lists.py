@@ -16,9 +16,15 @@ import requests
 
 def test_create_list(client):
     """Test creating a list."""
-    result = client.create_list(name="Test List", list_type="private", optin="double")
-    assert "data" in result
-    assert isinstance(result["data"], dict)
+    timestamp = int(time.time())
+    result = client.create_list(name=f"TestList_{timestamp}", list_type="private", optin="double")
+    list_id = result["data"]["id"]
+
+    try:
+        assert "data" in result
+        assert isinstance(result["data"], dict)
+    finally:
+        client.delete_list(list_id)
 
 
 def test_update_list(client):

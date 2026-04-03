@@ -28,53 +28,67 @@ def test_campaign_full_flow(client):
     # Use unique names/emails to avoid conflicts
     timestamp = int(time.time())
 
-    # 1. Create list
-    created_list = client.create_list(
-        name=f"Flow List {timestamp}", list_type="private", optin="double"
-    )
-    list_id = created_list["data"]["id"]
+    # Track created resources for cleanup
+    list_id = sid = tid = campaign_id = None
 
-    # 2. Create subscriber
-    sub = client.create_subscriber(
-        email=f"flow_{timestamp}@test.com", name="FlowUser", lists=[list_id]
-    )
-    sid = sub["data"]["id"]
-
-    # 3. Create template (skip if template creation fails)
-    # Template body must include the {{ template "content" . }} placeholder
-    template_body = '<html><body>{{ template "content" . }}</body></html>'
-    tid = None
     try:
-        template = client.create_template(f"Flow Template {timestamp}", template_body)
-        tid = template["data"]["id"]
-    except requests.HTTPError:
-        # Template creation might fail, continue without template
-        pass
+        # 1. Create list
+        created_list = client.create_list(
+            name=f"Flow List {timestamp}", list_type="private", optin="double"
+        )
+        list_id = created_list["data"]["id"]
 
-    # 4. Create campaign (omit template_id when template creation failed)
-    campaign_kwargs = dict(
-        name=f"Flow Campaign {timestamp}",
-        subject="Flow Subject",
-        body="<p>Flow Body</p>",
-        from_email="noreply@test.com",
-        lists=[list_id],
-    )
-    if tid is not None:
-        campaign_kwargs["template_id"] = tid
-    campaign = client.create_campaign(**campaign_kwargs)
-    campaign_id = campaign["data"]["id"]
+        # 2. Create subscriber
+        sub = client.create_subscriber(
+            email=f"flow_{timestamp}@test.com", name="FlowUser", lists=[list_id]
+        )
+        sid = sub["data"]["id"]
 
-    # 5. Fetch all campaigns
-    campaigns = client.get_campaigns()
-    assert any(c["id"] == campaign_id for c in campaigns["data"]["results"])
+        # 3. Create template (skip if template creation fails)
+        template_body = '<html><body>{{ template "content" . }}</body></html>'
+        try:
+            template = client.create_template(f"Flow Template {timestamp}", template_body)
+            tid = template["data"]["id"]
+        except requests.HTTPError:
+            pass
 
-    # 6. Run campaign
-    run_res = client.run_campaign(campaign_id)
-    # v5.1.0+ returns {"data": {...}} or {"message": "ok"}
-    assert "message" in run_res or "data" in run_res
+        # 4. Create campaign (omit template_id when template creation failed)
+        campaign_kwargs = dict(
+            name=f"Flow Campaign {timestamp}",
+            subject="Flow Subject",
+            body="<p>Flow Body</p>",
+            from_email="noreply@test.com",
+            lists=[list_id],
+        )
+        if tid is not None:
+            campaign_kwargs["template_id"] = tid
+        campaign = client.create_campaign(**campaign_kwargs)
+        campaign_id = campaign["data"]["id"]
 
-    # Cleanup
-    client.delete_subscriber(sid)
+        # 5. Fetch all campaigns
+        campaigns = client.get_campaigns()
+        assert any(c["id"] == campaign_id for c in campaigns["data"]["results"])
+
+        # 6. Run campaign
+        run_res = client.run_campaign(campaign_id)
+        assert "message" in run_res or "data" in run_res
+    finally:
+        # Cleanup all created resources
+        for delete_fn, resource_id in [
+            (client.delete_subscriber, sid),
+            (client.delete_campaign, campaign_id),
+            (client.delete_list, list_id),
+        ]:
+            if resource_id is not None:
+                try:
+                    delete_fn(resource_id)
+                except Exception:
+                    pass
+        if tid is not None:
+            try:
+                client.delete_template(tid)
+            except Exception:
+                pass
 
 
 def test_campaign_attribs_v6(client, listmonk_version_tuple):

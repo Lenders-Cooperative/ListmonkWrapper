@@ -101,7 +101,7 @@ class SubscriberMixin:
             subscriber_id: Internal Listmonk subscriber ID.
 
         Returns:
-            An empty dict for successful deletion.
+            A JSON dict containing ``{"data": True}`` for successful deletion.
         """
         return self._api.send("DELETE", f"/api/subscribers/{subscriber_id}")
 

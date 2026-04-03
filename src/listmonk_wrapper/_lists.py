@@ -86,11 +86,10 @@ class ListsMixin:
         Returns:
             A list of dicts, each containing at least uuid and name fields.
         """
-        # This endpoint doesn't require authentication
-        # Create a temporary session without auth
+        # This endpoint doesn't require authentication — use a plain
+        # requests.get() call to avoid leaking a Session object.
         full_url = f"{self._api.base_url}/api/public/lists"
-        temp_session = requests.Session()
-        response = temp_session.get(full_url, timeout=self._api.REQUEST_TIMEOUT)
+        response = requests.get(full_url, timeout=self._api.REQUEST_TIMEOUT)
         response.raise_for_status()
         if response.content:
             return response.json()

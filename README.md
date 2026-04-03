@@ -408,7 +408,7 @@ make test
 To run specific test files:
 
 ```
-make test DIR=tests/test_listmonk_new_methods.py
+make test DIR=tests/test_subscribers.py
 ```
 
 ---

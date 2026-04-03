@@ -92,7 +92,7 @@ class User:
 
 
 # -------------------------------------------------------------------------
-# ListMonk Client Fixture (session-based auth — v5.x)
+# ListMonk Client Fixture (HTTP Basic Auth — v5.1.0+ / v6.0.0+)
 # -------------------------------------------------------------------------
 
 

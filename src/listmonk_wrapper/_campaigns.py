@@ -33,7 +33,7 @@ class CampaignsMixin:
         *,
         content_type: str = "html",
         lists: Optional[List[int]] = None,
-        template_id: int = 1,
+        template_id: Optional[int] = None,
         tags: Optional[List[str]] = None,
         attribs: Optional[Dict[str, Any]] = None,
     ) -> JSONDict:
@@ -47,7 +47,8 @@ class CampaignsMixin:
             from_email: From address to use.
             content_type: Content type, usually "html" or "plain".
             lists: List of list IDs to target; defaults to [1] if omitted.
-            template_id: Template ID to use for the campaign.
+            template_id: Template ID to use for the campaign.  When omitted
+                the Listmonk server picks its own default template.
             tags: Optional list of tags.
             attribs: Optional JSON attributes for the campaign (v6.0.0+).
 

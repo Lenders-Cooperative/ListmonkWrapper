@@ -7,8 +7,8 @@ A lightweight Python client for interacting with the ListMonk REST API.
 This package provides:
 - A typed, PEP-friendly `ListMonkClient` for managing subscribers, lists,
   templates, and campaigns.
-- Compatibility with both BasicAuth (for bootstrap or legacy setups)
-  and modern token-based authentication.
+- Support for HTTP Basic Auth, including API token usage via Basic Auth
+  credentials (for example, username plus token).
 - A clean public API surface (`ListMonkClient`) re-exported at the package root.
 
 Usage example:
