@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from requests import Session
+from requests import Response, Session
 
 JSONDict = Dict[str, Any]
 
@@ -52,6 +52,32 @@ class APIHandler:  # pylint: disable=too-few-public-methods
         self.session.auth = (username, password)
 
     # ------------------------------------------------------------------
+    # Shared error handling
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _raise_for_status(response: Response) -> None:
+        """Raise :class:`requests.HTTPError` with an enhanced message.
+
+        Extracts the Listmonk ``message`` field from JSON error bodies
+        (or falls back to the first 200 chars of the response text) so
+        that callers get actionable diagnostics instead of a bare status
+        code.
+        """
+        if response.ok:
+            return
+
+        error_msg = f"{response.status_code} {response.reason}"
+        try:
+            error_body = response.json()
+            if "message" in error_body:
+                error_msg += f": {error_body['message']}"
+        except (ValueError, KeyError):
+            if response.text:
+                error_msg += f": {response.text[:200]}"
+        raise requests.HTTPError(error_msg, response=response)
+
+    # ------------------------------------------------------------------
     # Request Dispatch
     # ------------------------------------------------------------------
 
@@ -91,24 +117,7 @@ class APIHandler:  # pylint: disable=too-few-public-methods
             timeout=self.REQUEST_TIMEOUT,
         )
 
-        # For Basic Auth, credentials are sent with each request
-        # If we get 401, it means invalid credentials, not expired session
-        # So we don't retry - just raise the error
-
-        # Check for errors and include response body in error message if available
-        if not response.ok:
-            error_msg = f"{response.status_code} {response.reason}"
-            try:
-                error_body = response.json()
-                if "message" in error_body:
-                    error_msg += f": {error_body['message']}"
-            except (ValueError, KeyError):
-                # If response is not JSON or doesn't have message, use text
-                if response.text:
-                    error_msg += f": {response.text[:200]}"
-            raise requests.HTTPError(error_msg, response=response)
-
-        response.raise_for_status()
+        self._raise_for_status(response)
         if response.content:
             return response.json()
 
@@ -147,7 +156,7 @@ class APIHandler:  # pylint: disable=too-few-public-methods
             timeout=self.REQUEST_TIMEOUT,
         )
 
-        response.raise_for_status()
+        self._raise_for_status(response)
         if response.content:
             return response.json()
 

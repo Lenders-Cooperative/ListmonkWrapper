@@ -108,9 +108,11 @@ class CampaignsMixin:
             "body": body,
             "from_email": from_email,
             "content_type": content_type,
-            "lists": lists or [1],
-            "tags": tags or [],
         }
+        if lists is not None:
+            payload["lists"] = lists
+        if tags is not None:
+            payload["tags"] = tags
         if template_id is not None:
             payload["template_id"] = template_id
         if attribs is not None:

@@ -75,22 +75,30 @@ class SubscriberMixin:
         """
         Update an existing subscriber.
 
+        Only the fields included in the payload are changed; omitting
+        ``attribs`` or ``lists`` leaves the existing values intact on
+        the server.
+
         Args:
             subscriber_id: Internal Listmonk subscriber ID.
             email: Updated email address.
             name: Updated display name.
-            attribs: Optional updated metadata.
-            lists: Optional updated list of list IDs.
+            attribs: Optional updated metadata.  Pass an explicit dict to
+                replace; omit (None) to leave unchanged.
+            lists: Optional updated list of list IDs.  Pass an explicit
+                list to replace; omit (None) to leave unchanged.
 
         Returns:
             JSON dict, typically with a "message": "ok" payload.
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "email": email,
             "name": name,
-            "attribs": attribs or {},
-            "lists": lists or [],
         }
+        if attribs is not None:
+            payload["attribs"] = attribs
+        if lists is not None:
+            payload["lists"] = lists
         return self._api.send("PUT", f"/api/subscribers/{subscriber_id}", payload=payload)
 
     def delete_subscriber(self, subscriber_id: int) -> JSONDict:
