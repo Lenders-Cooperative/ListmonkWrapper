@@ -48,8 +48,8 @@ class ListMonkClient(  # pylint: disable=too-many-ancestors
         Args:
             host: Base host URL without port (e.g. "http://localhost").
             port: Port where Listmonk is listening (e.g. 9000).
-            username: Admin username for session login.
-            password: Admin password for session login.
+            username: Username used for HTTP Basic Authentication on API requests.
+            password: Password or API token used for HTTP Basic Authentication on API requests.
         """
         base = f"{host}:{port}"
         self._api = APIHandler(base, username=username, password=password)

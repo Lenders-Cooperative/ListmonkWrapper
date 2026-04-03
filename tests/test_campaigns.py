@@ -51,15 +51,17 @@ def test_campaign_full_flow(client):
         # Template creation might fail, continue without template
         pass
 
-    # 4. Create campaign
-    campaign = client.create_campaign(
+    # 4. Create campaign (omit template_id when template creation failed)
+    campaign_kwargs = dict(
         name=f"Flow Campaign {timestamp}",
         subject="Flow Subject",
         body="<p>Flow Body</p>",
         from_email="noreply@test.com",
         lists=[list_id],
-        template_id=tid,
     )
+    if tid is not None:
+        campaign_kwargs["template_id"] = tid
+    campaign = client.create_campaign(**campaign_kwargs)
     campaign_id = campaign["data"]["id"]
 
     # 5. Fetch all campaigns

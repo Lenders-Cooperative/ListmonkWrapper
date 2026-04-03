@@ -76,7 +76,7 @@ class ListsMixin:
 
         return self._api.send("GET", "/api/lists", params=params)
 
-    def get_public_lists(self) -> JSONDict:
+    def get_public_lists(self) -> list[dict[str, Any]]:
         """
         Retrieve public lists (unauthenticated endpoint).
 
@@ -84,11 +84,11 @@ class ListsMixin:
         Archived lists are never shown.
 
         Returns:
-            JSON array of lists with uuid and name fields.
+            A list of dicts, each containing at least uuid and name fields.
         """
         # This endpoint doesn't require authentication
         # Create a temporary session without auth
-        full_url = f"{self._api._host}/api/public/lists"  # pylint: disable=protected-access
+        full_url = f"{self._api.base_url}/api/public/lists"
         temp_session = requests.Session()
         response = temp_session.get(full_url, timeout=self._api.REQUEST_TIMEOUT)
         response.raise_for_status()

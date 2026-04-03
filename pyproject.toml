@@ -40,7 +40,5 @@ profile = "black"
 [tool.pylint.'MAIN']
 max-line-length = 100
 
-[tool.flake8]
-max-line-length = 100
-ignore = ["E501", "W503", "F403", "F405", "E203"]
-exclude = [".git", "__pycache__", "build", "dist", ".venv", "venv"]
+# NOTE: flake8 config lives in .flake8 (flake8 does not read pyproject.toml
+# by default). Keep it there so running `flake8` outside pre-commit works.

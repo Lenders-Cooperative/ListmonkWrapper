@@ -54,16 +54,17 @@ class CampaignsMixin:
         Returns:
             JSON dict with the created campaign under the "data" key.
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "name": name,
             "subject": subject,
             "body": body,
             "from_email": from_email,
             "content_type": content_type,
             "lists": lists or [1],
-            "template_id": template_id,
             "tags": tags or [],
         }
+        if template_id is not None:
+            payload["template_id"] = template_id
         if attribs is not None:
             payload["attribs"] = attribs
         return self._api.send("POST", "/api/campaigns", payload=payload)
@@ -100,16 +101,17 @@ class CampaignsMixin:
         Returns:
             JSON dict, typically with a "message": "ok" payload.
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "name": name,
             "subject": subject,
             "body": body,
             "from_email": from_email,
             "content_type": content_type,
             "lists": lists or [1],
-            "template_id": template_id,
             "tags": tags or [],
         }
+        if template_id is not None:
+            payload["template_id"] = template_id
         if attribs is not None:
             payload["attribs"] = attribs
         return self._api.send("PUT", f"/api/campaigns/{campaign_id}", payload=payload)

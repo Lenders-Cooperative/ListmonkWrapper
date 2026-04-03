@@ -83,6 +83,13 @@ class TransactionalMixin:  # pylint: disable=too-few-public-methods
         if single and multiple:
             raise ValueError("Cannot provide both single and multiple subscriber parameters")
 
+        # Reject empty collections — they pass the ``is not None`` check
+        # above but produce a payload with no recipients.
+        if subscriber_emails is not None and len(subscriber_emails) == 0:
+            raise ValueError("subscriber_emails must not be empty")
+        if subscriber_ids is not None and len(subscriber_ids) == 0:
+            raise ValueError("subscriber_ids must not be empty")
+
     # ------------------------------------------------------------
     # Subscriber payload builder
     # ------------------------------------------------------------
@@ -94,13 +101,13 @@ class TransactionalMixin:  # pylint: disable=too-few-public-methods
         subscriber_ids: Optional[List[int]],
     ) -> Dict[str, Any]:
         """Return only the subscriber-specific payload keys."""
-        if subscriber_email:
+        if subscriber_email is not None:
             return {"subscriber_email": subscriber_email}
-        if subscriber_id:
+        if subscriber_id is not None:
             return {"subscriber_id": subscriber_id}
-        if subscriber_emails:
+        if subscriber_emails is not None:
             return {"subscriber_emails": subscriber_emails}
-        if subscriber_ids:
+        if subscriber_ids is not None:
             return {"subscriber_ids": subscriber_ids}
         return {}
 

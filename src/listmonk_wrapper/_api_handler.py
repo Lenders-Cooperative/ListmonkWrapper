@@ -22,6 +22,11 @@ class APIHandler:  # pylint: disable=too-few-public-methods
     - Sending HTTP requests with automatic authentication.
     """
 
+    @property
+    def base_url(self) -> str:
+        """Return the base Listmonk URL (protocol + host + port)."""
+        return self._host
+
     REQUEST_TIMEOUT = 30
 
     def __init__(

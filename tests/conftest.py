@@ -147,12 +147,18 @@ def listmonk_version_tuple(listmonk_version: str) -> tuple[int, ...]:
 
 
 @pytest.fixture
-def subscriber_id(client: ListMonkClient) -> int:
+def subscriber_id(client: ListMonkClient):
     """
-    Create and return a temporary subscriber.
+    Create a temporary subscriber with a unique email and clean up after use.
     """
-    result = client.create_subscriber(email="test3457@gmail.com", name="Jeff")
-    return result["data"]["id"]
+    email = f"fixture_{int(time.time())}_{os.getpid()}@test.com"
+    result = client.create_subscriber(email=email, name="FixtureSubscriber")
+    sid = result["data"]["id"]
+    yield sid
+    try:
+        client.delete_subscriber(sid)
+    except Exception:
+        pass
 
 
 # -------------------------------------------------------------------------

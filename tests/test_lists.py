@@ -23,10 +23,19 @@ def test_create_list(client):
 
 def test_update_list(client):
     """Test updating a list."""
-    result = client.update_list(list_id=1, name="Test List", list_type="private", optin="double")
-    # v5.1.0+ list update returns {"data": {...}}
-    assert "data" in result
-    assert isinstance(result["data"], dict)
+    # Create a list first so we don't depend on ID 1 existing.
+    created = client.create_list(name="UpdateTarget", list_type="private", optin="double")
+    list_id = created["data"]["id"]
+
+    try:
+        result = client.update_list(
+            list_id=list_id, name="UpdateTarget Renamed", list_type="private", optin="double"
+        )
+        # v5.1.0+ list update returns {"data": {...}}
+        assert "data" in result
+        assert isinstance(result["data"], dict)
+    finally:
+        client.delete_list(list_id)
 
 
 def test_create_update_list(client):

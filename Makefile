@@ -91,21 +91,21 @@ fmt:
 complexity:
 	@echo "=== Per-File Maintainability Index (radon mi) ==="
 	@echo ""
-	@if command -v radon > /dev/null 2>&1 || poetry run radon --version > /dev/null 2>&1; then \
-		poetry run radon mi src/listmonk_wrapper --show; \
+	@if command -v radon > /dev/null 2>&1 || python -m radon --version > /dev/null 2>&1; then \
+		python -m radon mi src/listmonk_wrapper --show; \
 		echo ""; \
 		echo "=== Per-File Complexity Breakdown (radon cc) ==="; \
 		echo ""; \
-		poetry run radon cc src/listmonk_wrapper --show-complexity; \
+		python -m radon cc src/listmonk_wrapper --show-complexity; \
 		echo ""; \
 		echo "=== Xenon Summary ==="; \
 		echo ""; \
-		if command -v xenon > /dev/null 2>&1 || poetry run xenon --version > /dev/null 2>&1; then \
-			poetry run xenon --max-average=C --max-modules=C --max-absolute=C src/listmonk_wrapper 2>&1 | grep -E "(Found|Average|ERROR)" || true; \
+		if command -v xenon > /dev/null 2>&1 || python -m xenon --version > /dev/null 2>&1; then \
+			python -m xenon --max-average=C --max-modules=C --max-absolute=C src/listmonk_wrapper 2>&1 | grep -E "(Found|Average|ERROR)" || true; \
 		fi; \
 		echo ""; \
 		echo "Note: Ratings: A=best, B=good, C=moderate, D=high, E=very high, F=extreme"; \
 	else \
-		echo "Error: radon not found. Install with: poetry install --with dev"; \
+		echo "Error: radon not found. Install it in the active environment (e.g.: pip install radon xenon)"; \
 		exit 1; \
 	fi
