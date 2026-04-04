@@ -1,17 +1,15 @@
-#
-# Created on Wed Dec 22 2021
-#
-# Copyright (c) 2021 Lenders Cooperative, a division of Summit Technology Group, Inc.
-#
-
-
 def test_create_and_delete_subscriber_with_django_user(client, django_user):
-    results = client.create_subscriber(email=django_user.email, name=django_user.username)
-    data = results["data"]
-    new_user_id = data["id"]
-    assert isinstance(data["id"], int)
-    assert data["name"] == django_user.username
-    assert data["email"] == django_user.email
+    created = client.create_subscriber(
+        email=django_user.email,
+        name=django_user.username,
+    )
+    data = created["data"]
 
-    results = client.delete_subscriber(new_user_id)
-    assert results.get("data")
+    assert data["email"] == django_user.email
+    assert data["name"] == django_user.username
+
+    deleted = client.delete_subscriber(data["id"])
+
+    # Deletion in Listmonk v5.1.0+ returns {"data": True}
+    assert "data" in deleted
+    assert deleted["data"] is True
