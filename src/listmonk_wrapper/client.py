@@ -1,8 +1,8 @@
 """
-ListMonk API Client (v5.x compatible)
--------------------------------------
+ListMonk API Client (Listmonk v5.1.0+ and v6.0.0+ compatible)
+--------------------------------------------------------------
 
-Listmonk v5.1.0+ uses HTTP Basic Authentication for API access.
+Listmonk v5.1.0+ and v6.0.0+ use HTTP Basic Authentication for API access.
 This client implements:
 
 - Basic Auth with username/password (credentials sent with each request)

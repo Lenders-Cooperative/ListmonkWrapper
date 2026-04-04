@@ -13,7 +13,7 @@ help:
 	@echo "  make listmonk-down      Stop the local ListMonk + Postgres stack"
 	@echo "  make test               Run pytest (auto-start Listmonk if needed)"
 	@echo "                         Options: CAPTURE=no (default) to show output, DIR=tests/ (default)"
-	@echo "                         Example: make test CAPTURE=yes DIR=tests/test_listmonk_methods.py"
+	@echo "                         Example: make test CAPTURE=yes DIR=tests/test_subscribers.py"
 	@echo "  make lint               Run pylint on the listmonk_wrapper package"
 	@echo "  make fmt                Run black and isort on src/ and tests/"
 	@echo "  make complexity         Run xenon to check code complexity (per-file scores)"
