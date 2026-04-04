@@ -115,8 +115,11 @@ class ImportMixin:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Import file not found: {file_path}")
 
+        _, ext = os.path.splitext(file_path)
+        content_type = "application/zip" if ext.lower() == ".zip" else "text/csv"
+
         with open(file_path, "rb") as f:
-            files = {"file": (os.path.basename(file_path), f, "text/csv")}
+            files = {"file": (os.path.basename(file_path), f, content_type)}
             data = {"params": params_json}
 
             return self._api.send_multipart(

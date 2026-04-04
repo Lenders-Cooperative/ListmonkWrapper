@@ -270,12 +270,18 @@ class SubscriberMixin:
         Returns:
             JSON dict with `{"data": True}` on success.
         """
+        allowed_actions = ("add", "remove", "unsubscribe")
+        if action not in allowed_actions:
+            raise ValueError(f"action must be one of {allowed_actions}, got {action!r}")
+        if action == "add" and status is None:
+            raise ValueError("status is required when action is 'add' (e.g. 'confirmed')")
+
         payload: Dict[str, Any] = {
             "ids": subscriber_ids,
             "action": action,
             "target_list_ids": target_list_ids,
         }
-        if status:
+        if status is not None:
             payload["status"] = status
         return self._api.send("PUT", "/api/subscribers/lists", payload=payload)
 

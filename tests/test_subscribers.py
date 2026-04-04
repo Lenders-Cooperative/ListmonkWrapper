@@ -41,13 +41,6 @@ def test_query_subscribers(client):
     assert isinstance(results["data"]["results"], list)
 
 
-def test_query_subscribers_basic(client):
-    """Test basic subscriber query."""
-    result = client.query_subscribers()
-    assert "data" in result
-    assert "results" in result["data"]
-    assert isinstance(result["data"]["results"], list)
-
 
 def test_query_subscribers_by_email(client):
     """Test querying subscribers by email using SQL-like query syntax."""
